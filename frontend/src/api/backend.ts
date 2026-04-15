@@ -1,4 +1,4 @@
-import type { TripMetadata, TripTag } from '../types/georide'
+import type { TripMetadata, TripTag, RouteRule } from '../types/georide'
 
 const BASE_URL = import.meta.env.VITE_API_URL as string
 
@@ -47,9 +47,10 @@ export function getTripMetadata(tripId: number): Promise<TripMetadata | null> {
   return request<TripMetadata | null>(`/trips/${tripId}`)
 }
 
+// Always send both fields — null clears, non-null sets.
 export function upsertTripMetadata(
   tripId: number,
-  data: { tag?: TripTag; note?: string }
+  data: { tag: TripTag | null; note: string | null }
 ): Promise<TripMetadata> {
   return request<TripMetadata>(`/trips/${tripId}`, {
     method: 'PUT',
@@ -59,4 +60,29 @@ export function upsertTripMetadata(
 
 export function deleteTripMetadata(tripId: number): Promise<void> {
   return request<void>(`/trips/${tripId}`, { method: 'DELETE' })
+}
+
+export function bulkAutoTag(
+  tripIds: number[],
+  tag: TripTag
+): Promise<{ applied: number }> {
+  return request<{ applied: number }>('/trips/auto-tag', {
+    method: 'POST',
+    body: JSON.stringify({ trip_ids: tripIds, tag }),
+  })
+}
+
+export function getRouteRules(): Promise<RouteRule[]> {
+  return request<RouteRule[]>('/route-rules')
+}
+
+export function upsertRouteRule(routeKey: string, tag: TripTag): Promise<RouteRule> {
+  return request<RouteRule>(`/route-rules/${encodeURIComponent(routeKey)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ tag }),
+  })
+}
+
+export function deleteRouteRule(routeKey: string): Promise<void> {
+  return request<void>(`/route-rules/${encodeURIComponent(routeKey)}`, { method: 'DELETE' })
 }

@@ -20,6 +20,18 @@ CREATE TABLE IF NOT EXISTS trip_metadata (
   UNIQUE (user_id, georide_trip_id)
 );
 
+-- Route-based auto-tag rules: user_id + route_key (bucketed coords) → tag
+CREATE TABLE IF NOT EXISTS route_rules (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  route_key   TEXT NOT NULL,
+  tag         TEXT NOT NULL CHECK (tag IN ('commute','leisure','sport','track','other')),
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  updated_at  TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (user_id, route_key)
+);
+
+DROP TRIGGER IF EXISTS route_rules_updated_at ON route_rules;
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -31,6 +43,10 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trip_metadata_updated_at ON trip_metadata;
 CREATE TRIGGER trip_metadata_updated_at
   BEFORE UPDATE ON trip_metadata
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER route_rules_updated_at
+  BEFORE UPDATE ON route_rules
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 `
 

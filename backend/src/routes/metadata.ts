@@ -10,6 +10,29 @@ const app = new Hono<{ Variables: AppVariables }>()
 
 app.use('*', requireAuth)
 
+// POST /trips/auto-tag — bulk-upsert a tag across many trips (preserves existing notes)
+app.post('/auto-tag', async (c) => {
+  const { sub: userId } = c.get('jwtPayload')
+  const body = await c.req.json<{ trip_ids: number[]; tag: string }>()
+
+  if (!VALID_TAGS.includes(body.tag as Tag)) {
+    throw new HTTPException(400, { message: `tag must be one of: ${VALID_TAGS.join(', ')}` })
+  }
+  if (!Array.isArray(body.trip_ids) || body.trip_ids.length === 0) {
+    throw new HTTPException(400, { message: 'trip_ids must be a non-empty array' })
+  }
+
+  await pool.query(
+    `INSERT INTO trip_metadata (user_id, georide_trip_id, tag, note)
+     SELECT $1, trip_id, $2, NULL
+     FROM unnest($3::integer[]) AS trip_id
+     ON CONFLICT (user_id, georide_trip_id) DO UPDATE
+       SET tag = EXCLUDED.tag, updated_at = now()`,
+    [userId, body.tag, body.trip_ids]
+  )
+  return c.json({ applied: body.trip_ids.length })
+})
+
 // GET /trips/metadata — all metadata for the current user
 app.get('/', async (c) => {
   const { sub: userId } = c.get('jwtPayload')
@@ -45,9 +68,10 @@ app.put('/:tripId', async (c) => {
   const tripId = Number(c.req.param('tripId'))
   if (!Number.isInteger(tripId)) throw new HTTPException(400, { message: 'Invalid trip id' })
 
-  const body = await c.req.json<{ tag?: string; note?: string }>()
+  const body = await c.req.json<{ tag?: string | null; note?: string | null }>()
 
-  if (body.tag !== undefined && !VALID_TAGS.includes(body.tag as Tag)) {
+  // null is allowed (clears the field); only reject non-null invalid values
+  if (body.tag != null && !VALID_TAGS.includes(body.tag as Tag)) {
     throw new HTTPException(400, {
       message: `tag must be one of: ${VALID_TAGS.join(', ')}`,
     })
@@ -57,8 +81,9 @@ app.put('/:tripId', async (c) => {
     `INSERT INTO trip_metadata (user_id, georide_trip_id, tag, note)
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (user_id, georide_trip_id) DO UPDATE
-       SET tag  = COALESCE(EXCLUDED.tag,  trip_metadata.tag),
-           note = COALESCE(EXCLUDED.note, trip_metadata.note)
+       SET tag        = EXCLUDED.tag,
+           note       = EXCLUDED.note,
+           updated_at = now()
      RETURNING georide_trip_id, tag, note, created_at, updated_at`,
     [userId, tripId, body.tag ?? null, body.note ?? null]
   )

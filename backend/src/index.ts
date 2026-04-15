@@ -5,6 +5,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import authRoute from './routes/auth.js'
 import metadataRoute from './routes/metadata.js'
+import routeRulesRoute from './routes/routeRules.js'
 
 const app = new Hono()
 
@@ -21,6 +22,7 @@ app.use(
 
 app.route('/auth', authRoute)
 app.route('/trips', metadataRoute)
+app.route('/route-rules', routeRulesRoute)
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 

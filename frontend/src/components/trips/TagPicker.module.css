@@ -1,0 +1,63 @@
+.trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.empty {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  border: 1.5px dashed #d1d5db;
+  border-radius: 99px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
+
+.empty:hover {
+  color: #6b7280;
+  border-color: #9ca3af;
+}
+
+.dropdown {
+  z-index: 200;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 140px;
+}
+
+.none {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.none:hover {
+  background: #f3f4f6;
+}
+
+.option {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.option:hover,
+.option.selected {
+  background: #f3f4f6;
+}

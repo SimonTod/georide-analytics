@@ -48,3 +48,10 @@ export type TripMetadata = {
   created_at: string
   updated_at: string
 }
+
+export type RouteRule = {
+  id: number
+  route_key: string
+  tag: TripTag
+  created_at: string
+}
