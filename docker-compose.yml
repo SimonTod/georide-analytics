@@ -3,7 +3,7 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: georide_enhanced
+      POSTGRES_DB: georide_analytics
       POSTGRES_USER: georide
       POSTGRES_PASSWORD: dev
     ports:
@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U georide -d georide_enhanced"]
+      test: ["CMD-SHELL", "pg_isready -U georide -d georide_analytics"]
       interval: 5s
       timeout: 5s
       retries: 5

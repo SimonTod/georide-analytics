@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**georide-enhanced** is a web application that extends the GeoRide GPS tracker experience with features absent from the official mobile app. It connects to the public GeoRide API using the user's own credentials.
+**GeoRide Analytics** is a web application that provides complementary statistics for GeoRide GPS tracker owners. It connects to the public GeoRide API using the user's own credentials to surface analytics not available in the official app.
 
 Target user: GeoRide GPS tracker owner (motorcycle/scooter) who wants richer analytics and trip management from a browser.
 
@@ -187,7 +187,7 @@ cd backend && npm install
 
 `backend/.env`:
 ```
-DATABASE_URL=postgresql://postgres:dev@localhost:5432/georide_enhanced
+DATABASE_URL=postgresql://postgres:dev@localhost:5432/georide_analytics
 JWT_SECRET=your-secret-here
 GEORIDE_API_URL=https://api.georide.com
 ```

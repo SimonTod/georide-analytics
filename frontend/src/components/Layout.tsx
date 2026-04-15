@@ -8,7 +8,7 @@ export default function Layout() {
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
-        <span className={styles.logo}>GeoRide Enhanced</span>
+        <span className={styles.logo}>GeoRide Analytics</span>
         <nav className={styles.nav}>
           <NavLink to="/dashboard" className={({ isActive }) => isActive ? styles.active : ''}>
             Dashboard

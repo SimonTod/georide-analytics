@@ -29,7 +29,7 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>GeoRide Enhanced</h1>
+        <h1 className={styles.title}>GeoRide Analytics</h1>
         <p className={styles.subtitle}>Connectez-vous avec vos identifiants GeoRide</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
