@@ -1,0 +1,93 @@
+# docker-compose.prod.yml — Environnement de production
+#
+# Usage :
+#   cp .env.example .env    # puis renseigner TOUTES les variables de production
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Prérequis :
+#   - Les ports 80 et 443 ouverts et accessibles publiquement (pour Let's Encrypt)
+#   - Les images backend et frontend construites en CI et disponibles dans un registry
+#     (variables BACKEND_IMAGE et FRONTEND_IMAGE dans .env)
+#   - Un nom de domaine pointant vers ce serveur (variable DOMAIN)
+#
+# Routage :
+#   https://${DOMAIN}        → frontend (nginx, fichiers statiques)
+#   https://api.${DOMAIN}   → backend  (API REST)
+#
+# Traefik gère le TLS automatiquement via Let's Encrypt (TLS-ALPN-01 challenge).
+# Toutes les requêtes HTTP sont redirigées vers HTTPS.
+
+services:
+  traefik:
+    image: traefik:v3
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # Entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Redirection globale HTTP → HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      # Let's Encrypt via TLS-ALPN-01 (ne dépend pas du port 80)
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?La variable ACME_EMAIL est requise dans .env}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-georide_analytics}
+      POSTGRES_USER: ${POSTGRES_USER:-georide}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?La variable POSTGRES_PASSWORD est requise dans .env}
+    # Pas de port exposé publiquement — accessible uniquement via le réseau Docker interne
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-georide} -d ${POSTGRES_DB:-georide_analytics}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ${BACKEND_IMAGE:?La variable BACKEND_IMAGE est requise dans .env}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-georide}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-georide_analytics}
+      JWT_SECRET: ${JWT_SECRET:?La variable JWT_SECRET est requise dans .env}
+      GEORIDE_API_URL: ${GEORIDE_API_URL:-https://api.georide.com}
+      PORT: "3001"
+      FRONTEND_URL: https://${DOMAIN:?La variable DOMAIN est requise dans .env}
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN}`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=3001"
+
+  frontend:
+    image: ${FRONTEND_IMAGE:?La variable FRONTEND_IMAGE est requise dans .env}
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+volumes:
+  postgres_data:
+  letsencrypt:

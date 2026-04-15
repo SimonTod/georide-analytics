@@ -173,39 +173,45 @@ Sign with `HS256`, payload: `{ sub: user.id, georide_user_id }`. No GeoRide toke
 
 ## Development Setup
 
-### Prerequisites
-- Node.js 20+
-- PostgreSQL (Docker recommended: `docker run -e POSTGRES_PASSWORD=dev -p 5432:5432 postgres`)
+### Option A — Docker (recommended)
 
-### Install dependencies
+Prerequisites: Docker + Docker Compose
+
 ```bash
+cp .env.example .env   # fill in POSTGRES_PASSWORD and JWT_SECRET at minimum
+docker compose -f docker-compose.dev.yml up
+```
+
+The frontend is available at http://localhost:5173.
+Node dependencies are installed automatically on first start. Source files are
+bind-mounted so tsx watch and Vite HMR pick up changes in real time.
+
+### Option B — Manual
+
+Prerequisites: Node.js 20+, PostgreSQL
+
+```bash
+# Environment variables
+cp backend/.env.example backend/.env   # set JWT_SECRET
+cp frontend/.env.example frontend/.env
+
+# Install
 cd frontend && npm install
 cd backend && npm install
-```
 
-### Environment variables
-
-`backend/.env`:
-```
-DATABASE_URL=postgresql://postgres:dev@localhost:5432/georide_analytics
-JWT_SECRET=your-secret-here
-GEORIDE_API_URL=https://api.georide.com
-```
-
-`frontend/.env`:
-```
-VITE_API_URL=http://localhost:3001
-VITE_GEORIDE_API_URL=https://api.georide.com
-```
-
-### Run in development
-```bash
-# Backend
+# Run
 cd backend && npm run dev
-
-# Frontend
-cd frontend && npm run dev
+cd frontend && npm run dev   # in a separate terminal
 ```
+
+### Docker Compose files
+
+| File | Purpose |
+|---|---|
+| `docker-compose.dev.yml` | Development — bind mounts, node images, hot reload |
+| `docker-compose.prod.yml` | Production — Traefik, SSL auto (Let's Encrypt), pre-built images |
+
+Root `.env.example` documents all variables for both environments.
 
 ### Build
 ```bash

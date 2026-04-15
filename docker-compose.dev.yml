@@ -1,0 +1,72 @@
+# docker-compose.dev.yml — Environnement de développement
+#
+# Usage :
+#   cp .env.example .env    # puis renseigner les valeurs
+#   docker compose -f docker-compose.dev.yml up
+#
+# Les images Node (node:22-alpine) sont fixes — elles ne sont pas rebuildées.
+# L'intégralité de ./backend et ./frontend (node_modules inclus) est montée dans
+# les containers via un bind mount. Les node_modules restent sur le filesystem
+# hôte : navigables depuis l'éditeur et utilisables par le LSP / IntelliSense.
+#
+# Note : si les node_modules n'existent pas encore, npm install est lancé
+# automatiquement au démarrage et les installe directement dans le dossier hôte.
+# Les dépendances sont compilées pour Linux (Alpine) — sans impact pour ce projet
+# qui ne contient pas de modules natifs.
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-georide_analytics}
+      POSTGRES_USER: ${POSTGRES_USER:-georide}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?La variable POSTGRES_PASSWORD est requise dans .env}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-georide} -d ${POSTGRES_DB:-georide_analytics}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-georide}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-georide_analytics}
+      JWT_SECRET: ${JWT_SECRET:?La variable JWT_SECRET est requise dans .env}
+      GEORIDE_API_URL: ${GEORIDE_API_URL:-https://api.georide.com}
+      PORT: "3001"
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      NODE_ENV: development
+    # npm install au premier démarrage (rapide si node_modules déjà peuplé)
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      # Cible du proxy Vite : lue par vite.config.ts (pas exposée au navigateur).
+      # Doit pointer vers le service backend dans le réseau Docker interne.
+      BACKEND_URL: http://backend:3001
+      VITE_GEORIDE_API_URL: ${VITE_GEORIDE_API_URL:-https://api.georide.com}
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

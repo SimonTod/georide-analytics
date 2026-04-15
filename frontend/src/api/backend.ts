@@ -1,6 +1,6 @@
 import type { TripMetadata, TripTag, RouteRule } from '../types/georide'
 
-const BASE_URL = import.meta.env.VITE_API_URL as string
+const BASE_URL = '/api'
 
 function getToken(): string {
   const token = localStorage.getItem('app_token')

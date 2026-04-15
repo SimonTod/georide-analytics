@@ -79,53 +79,61 @@ Browser → notre backend        (JWT applicatif, localStorage)
 
 ## Installation
 
-### Prérequis
+### Option A — Docker (recommandé)
 
-- Node.js 20+
-- Docker (pour PostgreSQL)
-
-### 1. Base de données
+**Prérequis :** Docker + Docker Compose
 
 ```bash
-docker compose up -d
+# 1. Copier et renseigner les variables d'environnement
+cp .env.example .env
+# Éditez .env : renseignez au minimum POSTGRES_PASSWORD et JWT_SECRET
+
+# 2. Lancer tous les services (base de données, backend, frontend)
+docker compose -f docker-compose.dev.yml up
 ```
 
-### 2. Backend
+L'application est disponible sur <http://localhost:5173>.
+
+Au premier démarrage, les dépendances Node sont installées automatiquement dans les containers. Les sources sont montées en volume : toute modification est détectée à chaud (tsx watch + Vite HMR).
+
+### Option B — Installation manuelle
+
+**Prérequis :** Node.js 20+, PostgreSQL
 
 ```bash
+# Base de données (si vous n'en avez pas déjà une)
+docker run -d -e POSTGRES_PASSWORD=dev -e POSTGRES_USER=georide \
+  -e POSTGRES_DB=georide_analytics -p 5432:5432 postgres:17-alpine
+
+# Backend
 cd backend
 cp .env.example .env   # renseigner JWT_SECRET avec une valeur aléatoire longue
 npm install
 npm run dev
-```
 
-### 3. Frontend
-
-```bash
+# Frontend (dans un autre terminal)
 cd frontend
 cp .env.example .env
 npm install
 npm run dev
 ```
 
-L'application est disponible sur <http://localhost:5173>.
-
 ### Variables d'environnement
 
-**`backend/.env`**
-```
-DATABASE_URL=postgresql://georide:dev@localhost:5432/georide_analytics
-JWT_SECRET=<secret long et aléatoire>
-GEORIDE_API_URL=https://api.georide.com
-PORT=3001
-FRONTEND_URL=http://localhost:5173
-```
+**`.env` (racine, utilisé par Docker Compose)**
 
-**`frontend/.env`**
-```
-VITE_API_URL=http://localhost:3001
-VITE_GEORIDE_API_URL=https://api.georide.com
-```
+Voir [`.env.example`](.env.example) pour la liste complète avec commentaires.
+
+Les variables essentielles :
+
+| Variable | Description |
+|---|---|
+| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL |
+| `JWT_SECRET` | Secret de signature JWT (`openssl rand -hex 32`) |
+| `DOMAIN` | Domaine principal *(prod uniquement)* |
+| `ACME_EMAIL` | Email Let's Encrypt *(prod uniquement)* |
+| `BACKEND_IMAGE` | Image Docker du backend *(prod uniquement)* |
+| `FRONTEND_IMAGE` | Image Docker du frontend *(prod uniquement)* |
 
 ---
 
@@ -155,10 +163,11 @@ Une pipeline GitHub Actions exécute lint + vérification TypeScript + tests à 
 | Couche | Technologies |
 |---|---|
 | Frontend | React 18, Vite, TypeScript, TanStack Query, Recharts, React Leaflet |
-| Backend | Hono, Node.js 20, TypeScript |
+| Backend | Hono, Node.js 22, TypeScript |
 | Base de données | PostgreSQL 17 |
 | Tests | Jest + ts-jest ESM (backend), Vitest + Testing Library (frontend) |
 | CI | GitHub Actions |
+| Infra | Docker Compose (dev), Traefik + Let's Encrypt (prod) |
 
 ---
 
