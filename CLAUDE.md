@@ -221,9 +221,55 @@ cd backend && npm run lint
 
 ### Tests
 ```bash
-cd frontend && npm test
+cd frontend && npm test        # mode watch (développement)
+cd frontend && npm run test:ci # single run (CI / vérification ponctuelle)
 cd backend && npm test
 ```
+
+---
+
+## Tests unitaires
+
+### Stack
+
+| Projet | Framework | Runner | Mocking |
+|--------|-----------|--------|---------|
+| `backend/` | Jest (via `ts-jest`, preset ESM) | `node --experimental-vm-modules jest` | `jest.unstable_mockModule()` — obligatoire en ESM natif |
+| `frontend/` | Vitest 2 + jsdom | `vitest run` (CI) / `vitest` (watch) | `vi.mock()` |
+
+Le frontend utilise en plus `@testing-library/react` et `@testing-library/jest-dom` pour les tests de composants React.
+
+### Fichiers de tests existants
+
+**Backend**
+- `src/middleware/auth.test.ts` — middleware `requireAuth` (6 cas : header manquant, mauvais scheme, token invalide, mauvais secret, `JWT_SECRET` absent, token valide)
+- `src/routes/metadata.test.ts` — routes CRUD métadonnées + `POST /auto-tag` (12 tests)
+- `src/routes/routeRules.test.ts` — routes règles de routage (9 tests)
+
+**Frontend**
+- `src/utils/routes.test.ts` — `bucketCoord` et `tripRouteKey`
+- `src/utils/stats.test.ts` — `formatDuration` et `computeStats`
+- `src/utils/dates.test.ts` — `dateRangeForPeriod`, `previousPeriodRange`, `PERIOD_LABELS`
+- `src/utils/routeAnalysis.test.ts` — `analyzeGroupTags` (tous les cas : all-same, partial, none, mixed)
+- `src/components/trips/TagBadge.test.tsx` — rendu, labels, couleurs
+
+### Règles à respecter
+
+**Toute fonctionnalité développée doit satisfaire les trois conditions suivantes :**
+
+1. **Lint** — `npm run lint` passe sans erreur dans le projet concerné.
+2. **TypeScript** — `npx tsc --noEmit` passe sans erreur.
+3. **Tests** — tous les tests existants continuent de passer ; les nouvelles logiques métier et utilitaires sont couvertes par des tests unitaires.
+
+Un développement est considéré **incomplet** tant que l'une de ces conditions n'est pas remplie.
+
+### Consignes pour les nouveaux développements
+
+- Toute nouvelle fonction utilitaire pure (calcul, transformation, formatage) doit être accompagnée de tests unitaires.
+- Toute nouvelle route backend doit être couverte : cas nominaux, cas d'erreur (validation, auth), et mock de `pool.query`.
+- Les tests de composants React sont réservés aux composants avec logique propre ; les composants purement présentationnels n'ont pas besoin d'être testés.
+- Ne pas mocker la base de données avec une vraie connexion : `pool` est toujours mocké dans les tests backend via `jest.unstable_mockModule('../db/index.js', ...)`.
+- Les tests de dates utilisent `vi.useFakeTimers()` + `vi.setSystemTime()` et s'exécutent en UTC (`TZ=UTC` dans la CI).
 
 ---
 

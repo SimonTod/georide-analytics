@@ -7,6 +7,7 @@ import type { EnrichedTrip } from './TripRow'
 import type { TripTag } from '../../types/georide'
 import { formatDuration } from '../../utils/stats'
 import { tripRouteKey } from '../../utils/routes'
+import { analyzeGroupTags } from '../../utils/routeAnalysis'
 import { TripMapPopup, MapPinIcon, formatCoord } from './TripMapPopup'
 import TagBadge from './TagBadge'
 import styles from './RouteComparison.module.css'
@@ -26,42 +27,6 @@ type RouteGroup = {
   avgEndLon: number
   trips: EnrichedTrip[]
   distanceRange: { min: number; max: number }
-}
-
-type TagAnalysis =
-  | { kind: 'all-same'; tag: TripTag }
-  | { kind: 'partial';  tag: TripTag; taggedCount: number; untaggedIds: number[] }
-  | { kind: 'none';     allIds: number[] }
-  | { kind: 'mixed';    counts: { tag: TripTag; count: number }[]; untaggedCount: number }
-
-function analyzeGroupTags(trips: EnrichedTrip[]): TagAnalysis {
-  const taggedTrips   = trips.filter((t) => t.metadata?.tag)
-  const untaggedTrips = trips.filter((t) => !t.metadata?.tag)
-  const tagSet        = new Set(taggedTrips.map((t) => t.metadata!.tag!))
-
-  if (tagSet.size > 1) {
-    const countMap = new Map<TripTag, number>()
-    for (const t of taggedTrips) {
-      const tag = t.metadata!.tag!
-      countMap.set(tag, (countMap.get(tag) ?? 0) + 1)
-    }
-    return {
-      kind:          'mixed',
-      counts:        [...countMap.entries()].map(([tag, count]) => ({ tag, count })),
-      untaggedCount: untaggedTrips.length,
-    }
-  }
-  if (tagSet.size === 1) {
-    const tag = [...tagSet][0]
-    if (untaggedTrips.length === 0) return { kind: 'all-same', tag }
-    return {
-      kind:        'partial',
-      tag,
-      taggedCount: taggedTrips.length,
-      untaggedIds: untaggedTrips.map((t) => t.trip_id),
-    }
-  }
-  return { kind: 'none', allIds: trips.map((t) => t.trip_id) }
 }
 
 // ---------------------------------------------------------------------------
@@ -143,7 +108,7 @@ export default function RouteComparison({ trips, onBulkTag }: Props) {
   function toggle(key: string) {
     setOpenKeys((prev) => {
       const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
+      if (next.has(key)) next.delete(key); else next.add(key)
       return next
     })
   }
