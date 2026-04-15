@@ -228,6 +228,20 @@ cd backend && npm test
 
 ---
 
+## README
+
+Le fichier `README.md` est le point d'entrée public du projet sur GitHub. Il doit rester synchronisé avec l'état réel de l'application.
+
+**Mettre à jour le README quand :**
+- Une nouvelle fonctionnalité est ajoutée → ajouter une entrée dans la section correspondante (Dashboard ou Trajets) et passer son statut à ✅ dans le tableau d'avancement.
+- Une fonctionnalité planifiée est commencée ou terminée → mettre à jour son statut dans le tableau d'avancement (`🚧 En cours` ou `✅ Disponible`).
+- Une nouvelle page est créée → ajouter une section dédiée dans les fonctionnalités.
+- La stack technique évolue (nouvelle lib majeure, changement de BDD, etc.) → mettre à jour le tableau de stack.
+
+Ne pas modifier le README pour des détails d'implémentation internes (refactoring, renommage de variables, etc.) qui ne changent pas ce que l'utilisateur voit.
+
+---
+
 ## Tests unitaires
 
 ### Stack
