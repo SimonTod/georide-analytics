@@ -27,8 +27,8 @@ app.route('/route-rules', routeRulesRoute)
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
 const port = Number(process.env.PORT ?? 3001)
-console.log(`Backend listening on http://localhost:${port}`)
+console.log(`Backend listening on http://[::]:${port}`)
 
-serve({ fetch: app.fetch, port })
+serve({ fetch: app.fetch, port, hostname: '::' })
 
 export default app

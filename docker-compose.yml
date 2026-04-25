@@ -1,8 +1,8 @@
-# docker-compose.dev.yml — Environnement de développement
+# docker-compose.yml — Environnement de développement local
 #
 # Usage :
 #   cp .env.example .env    # puis renseigner les valeurs
-#   docker compose -f docker-compose.dev.yml up
+#   docker compose up
 #
 # Les images Node (node:22-alpine) sont fixes — elles ne sont pas rebuildées.
 # L'intégralité de ./backend et ./frontend (node_modules inclus) est montée dans
