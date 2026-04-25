@@ -89,7 +89,7 @@ cp .env.example .env
 # Éditez .env : renseignez au minimum POSTGRES_PASSWORD et JWT_SECRET
 
 # 2. Lancer tous les services (base de données, backend, frontend)
-docker compose -f docker-compose.dev.yml up
+docker compose up
 ```
 
 L'application est disponible sur <http://localhost:5173>.
@@ -130,10 +130,6 @@ Les variables essentielles :
 |---|---|
 | `POSTGRES_PASSWORD` | Mot de passe PostgreSQL |
 | `JWT_SECRET` | Secret de signature JWT (`openssl rand -hex 32`) |
-| `DOMAIN` | Domaine principal *(prod uniquement)* |
-| `ACME_EMAIL` | Email Let's Encrypt *(prod uniquement)* |
-| `BACKEND_IMAGE` | Image Docker du backend *(prod uniquement)* |
-| `FRONTEND_IMAGE` | Image Docker du frontend *(prod uniquement)* |
 
 ---
 
@@ -167,7 +163,7 @@ Une pipeline GitHub Actions exécute lint + vérification TypeScript + tests à 
 | Base de données | PostgreSQL 17 |
 | Tests | Jest + ts-jest ESM (backend), Vitest + Testing Library (frontend) |
 | CI | GitHub Actions |
-| Infra | Docker Compose (dev), Traefik + Let's Encrypt (prod) |
+| Infra | Docker Compose (dev local), Railway (prod) |
 
 ---
 
