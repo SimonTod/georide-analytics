@@ -6,6 +6,8 @@ GeoRide Analytics est une application web auto-hébergée qui se connecte à l'[
 
 **Il ne remplace pas l'app GeoRide** — il lit vos données existantes et en propose une lecture statistique plus riche depuis un navigateur.
 
+[![Ouvrir l'application](https://img.shields.io/badge/Ouvrir%20l'application-4F46E5?style=for-the-badge&logo=googlechrome&logoColor=white)](https://georide-analytics-production.up.railway.app)
+
 ---
 
 ## Fonctionnalités
